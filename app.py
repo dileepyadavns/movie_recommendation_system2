@@ -72,13 +72,32 @@ import requests
 #     data = pd.read_csv('main_data.csv')
 #     return list(data['movie_title'].str.capitalize())
 
+# #importing required libraries
+# import torch
+# import cv2
+# import numpy as np
+# import easyocr
+# import psycopg2 #pip install psycopg2 
+# import psycopg2.extras
+# import pandas as pd
+
+# conn = psycopg2.connect( #psycopg2 database adaptor for implementing python
+#          host="localhost",
+#         database="students",
+#        user='postgres',
+#       password='p@ssw0rd')
+
+# df=pd.read_sql('''select * from cars''',conn)  
+
+
+
 app = Flask(__name__)
 
 
 @app.route("/similarity",methods=["GET","POST"])
 def similarity():
     data = pd.read_csv('main_data.csv')
-    data=data.iloc[:10000][:]
+    data=data.iloc[:10][:]
     m_str=list(data['movie_title'].str.capitalize())
     return m_str
 
@@ -101,7 +120,7 @@ def home():
 
 
     data = pd.read_csv('main_data.csv')
-    data=data.iloc[:500,:]
+    data=data.iloc[:10,:]
    
     token= '5492165c61b1a21c06eb3a3b578a6339'
     
@@ -113,7 +132,11 @@ def home():
         response = requests.get("https://api.themoviedb.org/3/search/movie?api_key="+token+"&query="+i).json()
         try:
            path= 'https://image.tmdb.org/t/p/original'+str(response['results'][0]['poster_path'])
-           new=[i,path]
+           new={
+               "name": i,
+               "src": path,
+               "count": 0
+           }
            ppath.append(new)
         except IndexError:
             pass   
@@ -121,6 +144,14 @@ def home():
     print(ppath)
 
     return render_template('recommend.html',ppath=ppath)
+
+@app.route("/path",methods=['GET', 'POST'])
+def view():
+        # updated = request.form.get('updated')
+        information = request.data
+        print(information)
+        
+        return information
 
 if __name__ == '__main__':
     app.run(debug=True)

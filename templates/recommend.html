@@ -24,15 +24,16 @@
 <body id="content"> 
 	
       <div class="movie-content">
+        
       {% for i in ppath %}
       <!-- <h1>{arrp}</h1> -->
-        <div class="card" style="width: 15rem;" title="{{title}}" onclick="recommendcard(this)">
-          <div class="imghvr" id="imghvr1">
-            <img class="card-img-top" height="360" width="240" alt="{{title}} - poster" src={{i[1]}}>
+        <div class="card" style="width: 15rem;" title="{{title}}" >
+          <div class="imghvr" id="imghvr1" >
+            <img class="card-img-top" height="360" width="240" alt="{{title}} - poster" onclick="imageCounter({{i}})" src={{i.src}}>
             
            </div>
           <div class="card-body">
-            <h5 class="card-title">{{i[0]}}</h5>
+            <h5 class="card-title">{{i.name}}</h5>
           </div>
         </div>
     {% endfor %}
@@ -43,6 +44,27 @@
     
     </div>
   </div>
+  <script>
+    //count=0
+  
+    var p={{ppath|tojson}}
+    console.log(p)
+    function imageCounter(ele) {
+      for (let i = 0; i < p.length; i++) {
+        if(p[i].name === ele.name){
+          p[i].count = p[i].count + 1;
+        }
+      }
+      console.log(p);
+      
+      const URL = '/path'
+      const xhr = new XMLHttpRequest();
+      sender = JSON.stringify(p)
+      xhr.open('POST', URL);
+      xhr.send(sender);
+      
+    }
+  </script>
  
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
