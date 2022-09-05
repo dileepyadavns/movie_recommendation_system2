@@ -9,7 +9,9 @@ import json
 import bs4 as bs
 import urllib.request
 import pickle
+import json
 import requests
+from datetime import datetime
 
 # load the nlp model and tfidf vectorizer from disk
 # filename = 'nlp_model.pkl'
@@ -72,24 +74,17 @@ import requests
 #     data = pd.read_csv('main_data.csv')
 #     return list(data['movie_title'].str.capitalize())
 
-# #importing required libraries
-# import torch
-# import cv2
-# import numpy as np
-# import easyocr
-# import psycopg2 #pip install psycopg2 
-# import psycopg2.extras
-# import pandas as pd
-
-# conn = psycopg2.connect( #psycopg2 database adaptor for implementing python
-#          host="localhost",
-#         database="students",
-#        user='postgres',
-#       password='p@ssw0rd')
-
-# df=pd.read_sql('''select * from cars''',conn)  
 
 
+import psycopg2 #pip install psycopg2 
+import psycopg2.extras
+import pandas as pd
+
+conn = psycopg2.connect( #psycopg2 database adaptor for implementing python
+         host="localhost",
+        database="students",
+       user='postgres',
+      password='p@ssw0rd')
 
 app = Flask(__name__)
 
@@ -119,37 +114,64 @@ def login():
 def home():
 
 
-    data = pd.read_csv('main_data.csv')
-    data=data.iloc[:10,:]
    
-    token= '5492165c61b1a21c06eb3a3b578a6339'
-    
-    
-    arr= list(data['movie_title'].str.capitalize())
-    ppath=[]
+    username = request.form.get('username')
+    password = request.form.get('password')
+    cur = conn.cursor()
+    with conn:
+        cur.execute(f"SELECT * FROM user_details WHERE username=%(username)s AND password=%(password)s",
+                    {'username': username, 'password': password})
 
-    for i in arr:
-        response = requests.get("https://api.themoviedb.org/3/search/movie?api_key="+token+"&query="+i).json()
-        try:
-           path= 'https://image.tmdb.org/t/p/original'+str(response['results'][0]['poster_path'])
-           new={
-               "name": i,
-               "src": path,
-               "count": 0
-           }
-           ppath.append(new)
-        except IndexError:
-            pass   
+        if cur.fetchall():
+                data = pd.read_csv('main_data.csv')
+                data=data.iloc[:10,:]
+                dt = datetime.now()
+                login_date_time = dt
+                cur.execute('INSERT INTO  user_activity(time,username) VALUES(%s,%s) ', ( dt,username))
+                conn.commit()
+
+
+                token= '5492165c61b1a21c06eb3a3b578a6339'
+                arr= list(data['movie_title'].str.capitalize())
+                ppath=[]
+                for i in arr:
+                    response = requests.get("https://api.themoviedb.org/3/search/movie?api_key="+token+"&query="+i).json()
+                    try:
+                        path= 'https://image.tmdb.org/t/p/original'+str(response['results'][0]['poster_path'])
+                        new={
+                           "name": i,
+                           "src": path,
+                            "count": 0
+                            }
+                        ppath.append(new)
+                    except IndexError:
+                         pass  
+             
+
+
+
+                return render_template('recommend.html',ppath=ppath)     
     
-    print(ppath)
-
-    return render_template('recommend.html',ppath=ppath)
-
+     
 @app.route("/path",methods=['GET', 'POST'])
 def view():
         # updated = request.form.get('updated')
         information = request.data
+        my_json = information.decode('utf8')
+        data = json.loads(my_json)
+
+        information = json.dumps(data, indent=4, sort_keys=True).replace("'", '"')  
+        
+        # data = json.load(information)
         print(information)
+        cur = conn.cursor()
+        for i in data:
+            print(i['count'])
+          
+            if i['count']>0 :
+                print(i['name'])
+                cur.execute('INSERT INTO  user_activity(movie,clicks) VALUES(%s,%s) ', (i['name'], i['count'],))
+                conn.commit()
         
         return information
 
